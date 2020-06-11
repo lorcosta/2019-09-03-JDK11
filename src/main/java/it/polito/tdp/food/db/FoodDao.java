@@ -6,6 +6,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
+import it.polito.tdp.food.model.Adiacenze;
 import it.polito.tdp.food.model.Condiment;
 import it.polito.tdp.food.model.Food;
 import it.polito.tdp.food.model.Portion;
@@ -74,7 +77,7 @@ public class FoodDao {
 		}
 	}
 	
-	public List<Portion> listAllPortions(){
+	public List<Portion> listAllPortions(Map<Integer,Portion> idMapPortion){
 		String sql = "SELECT * FROM portion" ;
 		try {
 			Connection conn = DBConnect.getConnection() ;
@@ -87,13 +90,15 @@ public class FoodDao {
 			
 			while(res.next()) {
 				try {
-					list.add(new Portion(res.getInt("portion_id"),
+					Portion p=new Portion(res.getInt("portion_id"),
 							res.getDouble("portion_amount"),
 							res.getString("portion_display_name"), 
 							res.getDouble("calories"),
 							res.getDouble("saturated_fats"),
 							res.getInt("food_code")
-							));
+							);
+					idMapPortion.put(p.getPortion_id(), p);
+					list.add(p);
 				} catch (Throwable t) {
 					t.printStackTrace();
 				}
@@ -106,9 +111,99 @@ public class FoodDao {
 			e.printStackTrace();
 			return null ;
 		}
-
 	}
 	
+	public List<String> getDifferentPortions(){
+		String sql="SELECT DISTINCT portion_display_name " + 
+				"FROM portion";
+		try {
+			Connection conn = DBConnect.getConnection() ;
+
+			PreparedStatement st = conn.prepareStatement(sql) ;
+			
+			List<String> list = new ArrayList<>() ;
+			
+			ResultSet res = st.executeQuery() ;
+			
+			while(res.next()) {
+				try {
+					String p=res.getString("portion_display_name");
+					list.add(p);
+				} catch (Throwable t) {
+					t.printStackTrace();
+				}
+			}
+			
+			conn.close();
+			return list ;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null ;
+		}
+	}
 	
+	public List<String> getPortionVertices(Double calorie){
+		String sql="SELECT DISTINCT(portion_display_name) " + 
+				"FROM portion " + 
+				"WHERE calories<?";
+		try {
+			Connection conn = DBConnect.getConnection() ;
+
+			PreparedStatement st = conn.prepareStatement(sql) ;
+			
+			List<String> list = new ArrayList<>() ;
+			st.setDouble(1, calorie);
+			ResultSet res = st.executeQuery() ;
+			
+			while(res.next()) {
+				try {
+					String p=res.getString("portion_display_name");
+					list.add(p);
+				} catch (Throwable t) {
+					t.printStackTrace();
+				}
+			}
+			
+			conn.close();
+			return list ;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null ;
+		}
+	}
+	
+	public List<Adiacenze> getPortionEdges(){
+		String sql="SELECT p1.portion_display_name p1 , p2.portion_display_name p2, COUNT(*) as peso " + 
+				"FROM portion p1, portion p2 " + 
+				"WHERE p1.food_code=p2.food_code AND p1.portion_id<>p2.portion_id " + 
+				"GROUP BY p1,p2";
+		try {
+			Connection conn = DBConnect.getConnection() ;
+
+			PreparedStatement st = conn.prepareStatement(sql) ;
+			
+			List<Adiacenze> list = new ArrayList<>() ;
+
+			ResultSet res = st.executeQuery() ;
+			
+			while(res.next()) {
+				try {
+					Adiacenze a=new Adiacenze(res.getString("p1"), res.getString("p2"), res.getInt("peso"));
+					list.add(a);
+				} catch (Throwable t) {
+					t.printStackTrace();
+				}
+			}
+			
+			conn.close();
+			return list ;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null ;
+		}
+	}
 
 }

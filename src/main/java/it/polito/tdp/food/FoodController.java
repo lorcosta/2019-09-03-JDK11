@@ -5,6 +5,7 @@
 package it.polito.tdp.food;
 
 import java.net.URL;
+import java.util.List;
 import java.util.ResourceBundle;
 import it.polito.tdp.food.model.Model;
 import javafx.event.ActionEvent;
@@ -40,7 +41,7 @@ public class FoodController {
     private Button btnCammino; // Value injected by FXMLLoader
 
     @FXML // fx:id="boxPorzioni"
-    private ComboBox<?> boxPorzioni; // Value injected by FXMLLoader
+    private ComboBox<String> boxPorzioni; // Value injected by FXMLLoader
 
     @FXML // fx:id="txtResult"
     private TextArea txtResult; // Value injected by FXMLLoader
@@ -54,17 +55,42 @@ public class FoodController {
     @FXML
     void doCorrelate(ActionEvent event) {
     	txtResult.clear();
-    	txtResult.appendText("Cerco porzioni correlate...");
-    	
+    	txtResult.appendText("Cerco porzioni correlate...\n");
+    	String source=this.boxPorzioni.getValue();
+    	if(source==null) {
+    		this.txtResult.appendText("ATTENZIONE! Nessuno tipo di porzione scelta dal menu.");
+    		return;
+    	}
+    	List<String> correlate=model.cercaCorrelate(source);
+    	if(correlate==null) {
+    		this.txtResult.appendText("Nessun tipo di porzione correlato alla porzione scelta.\n");
+    	}
+    	for(String c:correlate) {
+    		this.txtResult.appendText(c+"\n");
+    	}
     }
 
     @FXML
     void doCreaGrafo(ActionEvent event) {
     	txtResult.clear();
     	txtResult.appendText("Creazione grafo...");
+    	String calorieString=this.txtCalorie.getText();
+    	Double calorie = null;
+    	try {
+    		calorie=Double.parseDouble(calorieString);
+    	}catch (NumberFormatException e) {
+    		e.printStackTrace();
+    		this.txtResult.appendText("ATTTENZIONE! Il valore inserito non e' numerico.");
+    		throw new NumberFormatException();
+    	}
     	
+    	model.creaGrafo(calorie);
+    	this.txtResult.appendText("GRAFO CREATO! "+model.getNumArchi()+" ARCHI E "+model.getNumVertici()+" VERTICI.\n");
     }
-
+    void loadData(){
+    	this.boxPorzioni.getItems().addAll(model.getPortion());
+    
+    }
     @FXML // This method is called by the FXMLLoader when initialization is complete
     void initialize() {
         assert txtCalorie != null : "fx:id=\"txtCalorie\" was not injected: check your FXML file 'Food.fxml'.";
@@ -79,5 +105,6 @@ public class FoodController {
     
     public void setModel(Model model) {
     	this.model = model;
+    	loadData();
     }
 }

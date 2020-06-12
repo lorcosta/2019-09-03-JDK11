@@ -7,6 +7,8 @@ package it.polito.tdp.food;
 import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
+
+import it.polito.tdp.food.model.Correlate;
 import it.polito.tdp.food.model.Model;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -49,7 +51,34 @@ public class FoodController {
     @FXML
     void doCammino(ActionEvent event) {
     	txtResult.clear();
-    	txtResult.appendText("Cerco cammino peso massimo...");
+    	txtResult.appendText("Cerco cammino peso massimo...\n");
+    	String passiString=this.txtPassi.getText();
+    	Integer passi=null;
+    	doCreaGrafo(event);
+    	try {
+    		passi=Integer.parseInt(passiString);
+    	}catch (NumberFormatException e) {
+    		e.printStackTrace();
+    		this.txtResult.appendText("ATTTENZIONE! Il valore di passi inserito non e' numerico.");
+    		throw new NumberFormatException();
+    	}
+    	String source=this.boxPorzioni.getValue();
+    	if(source==null) {
+    		this.txtResult.appendText("ATTENZIONE! Nessuno tipo di porzione scelta dal menu.");
+    		return;
+    	}
+    	List<String> cammino=model.cercaCammino(passi,source);
+    	Double pesoCammino=model.getPesoCammino();
+    	if(pesoCammino==0.0 || cammino.size()==0) {
+    		this.txtResult.appendText("Qualcosa e' andato storto durante la ricorsione...non sono riuscito a trovare un cammino!\n");
+    		return;
+    	}
+    	this.txtResult.appendText("TROVATO UN CAMMINO!\n");
+    	this.txtResult.appendText("I tipi di porzione incontrati sono:\n");
+    	for(String vicino:cammino) {
+    		this.txtResult.appendText(vicino+"\n");
+    	}
+    	this.txtResult.appendText("Il peso totale del cammino e': "+model.getPesoCammino());
     }
 
     @FXML
@@ -61,12 +90,12 @@ public class FoodController {
     		this.txtResult.appendText("ATTENZIONE! Nessuno tipo di porzione scelta dal menu.");
     		return;
     	}
-    	List<String> correlate=model.cercaCorrelate(source);
+    	List<Correlate> correlate=model.cercaCorrelate(source);
     	if(correlate==null) {
     		this.txtResult.appendText("Nessun tipo di porzione correlato alla porzione scelta.\n");
     	}
-    	for(String c:correlate) {
-    		this.txtResult.appendText(c+"\n");
+    	for(Correlate c:correlate) {
+    		this.txtResult.appendText(c.toString()+"\n");
     	}
     }
 
@@ -80,16 +109,13 @@ public class FoodController {
     		calorie=Double.parseDouble(calorieString);
     	}catch (NumberFormatException e) {
     		e.printStackTrace();
-    		this.txtResult.appendText("ATTTENZIONE! Il valore inserito non e' numerico.");
+    		this.txtResult.appendText("ATTTENZIONE! Il valore di calorie inserito non e' numerico.");
     		throw new NumberFormatException();
     	}
     	
     	model.creaGrafo(calorie);
-    	this.txtResult.appendText("GRAFO CREATO! "+model.getNumArchi()+" ARCHI E "+model.getNumVertici()+" VERTICI.\n");
-    }
-    void loadData(){
-    	this.boxPorzioni.getItems().addAll(model.getPortion());
-    
+    	this.txtResult.appendText("GRAFO CREATO! "+model.getNumArchi()+" ARCHI E "+model.getVertici().size()+" VERTICI.\n");
+    	this.boxPorzioni.getItems().addAll(model.getVertici());
     }
     @FXML // This method is called by the FXMLLoader when initialization is complete
     void initialize() {
@@ -105,6 +131,5 @@ public class FoodController {
     
     public void setModel(Model model) {
     	this.model = model;
-    	loadData();
     }
 }

@@ -115,7 +115,8 @@ public class FoodDao {
 	
 	public List<String> getDifferentPortions(){
 		String sql="SELECT DISTINCT portion_display_name " + 
-				"FROM portion";
+				"FROM portion "+
+				"ORDER BY portion_display_name";
 		try {
 			Connection conn = DBConnect.getConnection() ;
 
